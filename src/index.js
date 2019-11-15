@@ -44,5 +44,3 @@ db.init(parseUrl(couchUrl));
     console.error(err);
   }
 })();
-
-

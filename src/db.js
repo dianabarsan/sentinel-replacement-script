@@ -5,4 +5,3 @@ module.exports.init = (url) => {
   module.exports.medic = new PouchDB(url.href);
   module.exports.sentinel = new PouchDB(url.href + '-sentinel');
 };
-
