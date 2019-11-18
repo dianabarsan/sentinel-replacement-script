@@ -1,6 +1,7 @@
 const program = require('commander');
 const db = require('./db');
-const processChanges = require('./process-changes');
+//const processChanges = require('./process-changes');
+const processChangesBulk = require('./process_changes_bulk');
 
 program.version('0.0.1');
 program
@@ -39,7 +40,7 @@ db.init(parseUrl(couchUrl));
 
 (async () => {
   try {
-    await processChanges.execute(since);
+    await processChangesBulk.execute(since);
   } catch (err) {
     console.error(err);
   }
