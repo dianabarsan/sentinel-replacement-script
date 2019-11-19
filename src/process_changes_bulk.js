@@ -94,9 +94,11 @@ const processDocs = async (changes) => {
 };
 
 const batch = async (seq) => {
+  const limit = 1000;
   const opts = {
-    limit: 1000,
+    limit: limit,
     since: seq,
+    batch_size: limit + 1,
   };
   console.log('Getting changes from', seq);
   const changes = await db.medic.changes(opts);
