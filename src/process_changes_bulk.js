@@ -95,7 +95,7 @@ const processDocs = async (changes) => {
 
 const batch = async (seq) => {
   const opts = {
-    limit: 100,
+    limit: 1000,
     since: seq,
   };
   console.log('Getting changes from', seq);

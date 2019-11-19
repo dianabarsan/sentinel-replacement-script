@@ -6,7 +6,7 @@ Will process every change following next rules:
 ) - so it's pushed to the end of the changes feed and actually get processed by the actual
  Sentinel process
 - if the changed doc has an infodoc with a `latest_replication_date` field older than the date
-when we fast forwarded Sentinel, we "touch" the doc
+when we fast forwarded Sentinel (hardcoded value), we "touch" the doc
 - we don't "touch" the same doc twice  
 
 To install, run  `npm ci`. 
@@ -21,3 +21,7 @@ To run, the script requires the following parameters:
 
 Run command example:
 `npm run process -- --url=http://admin:pass@localhost:5988/medic --since=3755-fakeseq`
+
+*Disclaimer* 
+This script has a hardcoded timestamp that is used for a date comparison and some logic depends
+ on the app version being pre 3.7 at the time of the docs creation. 
