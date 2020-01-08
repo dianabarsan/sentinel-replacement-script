@@ -2,8 +2,6 @@ const db = require('./db');
 const tombstoneUtils = require('@twd/tombstone-utils');
 
 const IDS_TO_IGNORE = /^_design\/|-info$/;
-// this is the day we restarted Sentinel, should this be a param ?
-const SENTINEL_RESTART_DATE = new Date('2019-11-13T13:00:000Z').getTime();
 const TOUCHED_DOCS_CACHE = {};
 
 const infoDocId = change => `${change.id}-info`;
