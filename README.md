@@ -22,5 +22,5 @@ Run command example:
 `npm run process -- --url=http://admin:pass@localhost:5988/medic --since=3755-fakeseq`
 
 *Disclaimer* 
-This script only works for instances running 3.7.x+ at the time of document creation and only
+This script only works for instances running 3.7.x+ at the time of document deletion and only
  supports webapp workflows.  
