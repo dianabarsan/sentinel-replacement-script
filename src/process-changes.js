@@ -2,8 +2,6 @@ const db = require('./db');
 const tombstoneUtils = require('@twd/tombstone-utils');
 
 const IDS_TO_IGNORE = /^_design\/|-info$/;
-// this is the day we restarted Sentinel, should this be a param ?
-const SENTINEL_RESTART_DATE = new Date('2019-11-13T13:00:000Z').getTime();
 const TOUCHED_DOCS_CACHE = {};
 
 const handle404 = promise => {
@@ -43,6 +41,9 @@ const needsProcessing = async (change) => {
     return true;
   }
 
+  /*
+  This code is outdated, but keeping for explanatory reasons
+
   // fortunately for us, Muso is running 3.6.0 where `latest_replication_date` is set when sentinel processes the doc
   // unfortunately, that has been changed in 3.7.x to be updated to when API receives the doc change
   // it's more correct but we lose this piece of information - maybe we should add it again under a different name
@@ -52,6 +53,19 @@ const needsProcessing = async (change) => {
   if (infoDocDate < SENTINEL_RESTART_DATE) {
     return true;
   }
+  */
+
+  // since 3.7.x, infodocs are created by API, however API doesn't create the "transitions" property
+  // (unless it's an SMS that it runs transitions over itself but this script is not aimed at SMS instances)
+  // Sentinel updates the infodocs when it processes the doc for the first time to add "transitions" property.
+  // This means that we will not touch documents that have been updated, even if Sentinel hasn't seen their latest seq.
+  if (!infoDoc.transitions) {
+    return true;
+  }
+  // An option here would be to have two timestamps available, one representing the time when deletions started and one
+  // representing the time we restarted sentinel to bump the seq, unblocking it.
+  // If the document was updated within that interval, touch it.
+  // I very much do not like the idea of hardcoding or requiring two timestamps parameters.
 };
 
 const processChange = async (change) => {
