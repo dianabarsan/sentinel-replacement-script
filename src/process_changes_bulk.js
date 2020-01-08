@@ -22,6 +22,7 @@ const deleteInfoDocs = async (changes, database) => {
 const generateTombstone = (doc) => {
   delete doc._attachments;
   delete doc._deleted;
+  delete doc._revisions;
 
   return {
     _id: tombstoneUtils.generateTombstoneId(doc._id, doc._rev),
@@ -30,10 +31,30 @@ const generateTombstone = (doc) => {
   };
 };
 
+const isDeleteStub = doc => Object.keys(doc).length === 4;  // _id, _rev, _deleted and _revisions
+
 const generateTombstones = async (changes) => {
   const getDocs = changes.map(change => ({ id: change.id, rev: change.changes[0].rev }));
-  const result = await db.medic.bulkGet({ docs: getDocs });
+  const result = await db.medic.bulkGet({ docs: getDocs, revs: true });
   const docs = result.results.map(result => result.docs[0].ok).filter(doc => doc);
+
+  const stubs = docs.filter(isDeleteStub);
+  if (stubs.length) {
+    const getPreviousRevs = stubs
+      .map(stub => {
+        const previousRev = stub._revisions.ids.length > 1 && `${stub._revisions.start - 1}-${stub._revisions.ids[1]}`;
+        return previousRev && { id: stub._id, rev: previousRev };
+      })
+      .filter(pair => pair);
+    const result = await db.medic.bulkGet({docs: getPreviousRevs});
+    const previousRevs = result.results.map(result => result.docs[0].ok).filter(doc => doc);
+    docs.forEach((doc, idx) => {
+      if (isDeleteStub(doc)) {
+        const previousRev = previousRevs.find(previousRev => previousRev._id === doc._id);
+        docs[idx] = Object.assign({}, previousRev, doc);
+      }
+    });
+  }
 
   const tombstones = docs.map(generateTombstone);
   await db.medic.bulkDocs(tombstones);
