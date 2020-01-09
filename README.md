@@ -20,6 +20,8 @@ To run, the script requires the following parameters:
 - `--since=<the_processed_seq_that_was_overwritten_in_sentinel_meta_data>` or 
 
     `EXPORT SINCE=<the_processed_seq_that_was_overwritten_in_sentinel_meta_data>`   
+  
+Optional parameters:
     
 - `--start=<your_start_date>` OR
 
