@@ -21,7 +21,7 @@ To run, the script requires the following parameters:
 
     `EXPORT SINCE=<the_processed_seq_that_was_overwritten_in_sentinel_meta_data>`   
   
-Optional parameters:
+Optional parameters, but if one is used, the other is also required:
     
 - `--start=<your_start_date>` OR
 
