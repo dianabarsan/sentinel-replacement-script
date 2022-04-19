@@ -31,10 +31,7 @@ const generateTombstone = (doc) => {
   };
 };
 
-const isDeleteStub = doc => {
-  const stubKeys = ['_id', '_rev', '_deleted', '_revisions'];
-  return doc._deleted && Object.keys(doc).every(key => stubKeys.includes(key));
-};
+const isDeleteStub = doc => Object.keys(doc).length === 4;  // _id, _rev, _deleted and _revisions
 
 const generateTombstones = async (changes) => {
   const getDocs = changes.map(change => ({ id: change.id, rev: change.changes[0].rev }));
@@ -70,7 +67,7 @@ const processDeletes = async (changes) => {
   changes.forEach(change => console.log('processed delete', change.id));
 };
 
-const getChangesToTouch = (changes, infoDocs, dates) => {
+const getChangesToTouch = (changes, infoDocs) => {
   const changesToTouch = [];
   infoDocs.rows.forEach((row, idx) => {
     if (!row.doc) {
@@ -100,15 +97,10 @@ const getChangesToTouch = (changes, infoDocs, dates) => {
     if (!infoDoc.transitions) {
       return changesToTouch.push(changes[idx]);
     }
-
-    // The user can make two dates available to us: the date when Sentinel got blocked and the date it got unblocked.
-    // All documents that were edited within that interval should be touched.
-    if (dates) {
-      const infoDocDate = new Date(infoDoc.latest_replication_date).getTime();
-      if (infoDocDate >= dates.start && infoDocDate <= dates.end) {
-        return changesToTouch.push(changes[idx]);
-      }
-    };
+    // An option here would be to have two timestamps available, one representing the time when deletions started and one
+    // representing the time we restarted sentinel to bump the seq, unblocking it.
+    // If the document was updated within that interval, touch it.
+    // I very much do not like the idea of hardcoding or requiring two timestamps parameters.
 
     console.log('skipping', changes[idx].id);
   });
@@ -116,10 +108,10 @@ const getChangesToTouch = (changes, infoDocs, dates) => {
   return changesToTouch;
 };
 
-const processDocs = async (changes, dates) => {
+const processDocs = async (changes) => {
   const infoDocIds = changes.map(infoDocId);
   const infoDocs = await db.sentinel.allDocs({ keys: infoDocIds, include_docs: true });
-  const changesToTouch = getChangesToTouch(changes, infoDocs, dates);
+  const changesToTouch = getChangesToTouch(changes, infoDocs);
   if (!changesToTouch.length) {
     return;
   }
@@ -137,7 +129,7 @@ const processDocs = async (changes, dates) => {
   });
 };
 
-const batch = async (seq, dates) => {
+const batch = async (seq) => {
   const limit = 1000;
   const opts = {
     limit: limit,
@@ -172,13 +164,13 @@ const batch = async (seq, dates) => {
   }
 
   await processDeletes(deletes);
-  await processDocs(nonDeletes, dates);
+  await processDocs(nonDeletes);
 
   return changes.results.length && changes.last_seq;
 };
 
-module.exports.execute = async (startSeq, dates) => {
+module.exports.execute = async (startSeq) => {
   do {
-    startSeq = await batch(startSeq, dates);
+    startSeq = await batch(startSeq);
   } while (startSeq);
 };
